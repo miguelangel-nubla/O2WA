@@ -86,7 +86,7 @@
 
             const fetchAndHandleResponse = async () => {
                 try {
-                    const response = await fetch(window.location.pathname, {
+                    const response = await fetch(window.location.pathname + window.location.search, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
