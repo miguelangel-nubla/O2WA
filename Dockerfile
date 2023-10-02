@@ -15,7 +15,7 @@ FROM ubuntu:latest
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/o2wa /app/o2wa
-COPY --from=builder /app/config.json /app/config.json
+COPY --from=builder /app/config.example.yaml /app/config.example.yaml
 
 EXPOSE 8080
 

@@ -19,12 +19,12 @@ import (
 var defaultPage string
 
 type Endpoint struct {
-	Path           string   `json:"path"`
-	Public         bool     `json:"public,omitempty"`
-	RequiredGroups []string `json:"requiredGroups,omitempty"`
-	Command        []string `json:"command"`
-	BinaryOutput   bool     `json:"binaryOutput,omitempty"`
-	HTMLFile       string   `json:"htmlFile"`
+	Path           string   `json:"path" yaml:"path"`
+	Public         bool     `json:"public,omitempty" yaml:"public,omitempty"`
+	RequiredGroups []string `json:"requiredGroups,omitempty" yaml:"requiredGroups,omitempty"`
+	Command        []string `json:"command" yaml:"command"`
+	BinaryOutput   bool     `json:"binaryOutput,omitempty" yaml:"binaryOutput,omitempty"`
+	HTMLFile       string   `json:"htmlFile" yaml:"htmlFile"`
 }
 
 type templateVariables struct {

@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"os"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/miguelangel-nubla/o2wa/cmd/o2wa"
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -16,19 +18,19 @@ import (
 var configSchema []byte
 
 type Config struct {
-	ClientID     string          `json:"clientID"`
-	ClientSecret string          `json:"clientSecret"`
-	OidcIssuer   string          `json:"oidcIssuer"`
-	CallbackURL  string          `json:"callbackURL"`
-	Endpoints    []o2wa.Endpoint `json:"endpoints"`
-	TLSCert      string          `json:"tlsCert,omitempty"`
-	TLSKey       string          `json:"tlsKey,omitempty"`
-	ListenAddr   string          `json:"listenAddr"`
+	ClientID     string          `json:"clientID" yaml:"clientID"`
+	ClientSecret string          `json:"clientSecret" yaml:"clientSecret"`
+	OidcIssuer   string          `json:"oidcIssuer" yaml:"oidcIssuer"`
+	CallbackURL  string          `json:"callbackURL" yaml:"callbackURL"`
+	Endpoints    []o2wa.Endpoint `json:"endpoints" yaml:"endpoints"`
+	TLSCert      string          `json:"tlsCert,omitempty" yaml:"tlsCert,omitempty"`
+	TLSKey       string          `json:"tlsKey,omitempty" yaml:"tlsKey,omitempty"`
+	ListenAddr   string          `json:"listenAddr" yaml:"listenAddr"`
 }
 
 func main() {
-	// Load configuration from JSON
-	config := loadConfig("config.json")
+	// Load configuration from yaml
+	config := loadConfig("config.yaml")
 
 	app := o2wa.NewServer(config.ClientID, config.ClientSecret, config.OidcIssuer, config.CallbackURL)
 
@@ -86,17 +88,23 @@ func loadConfig(filename string) Config {
 	}
 	defer file.Close()
 
-	// Load the JSON content
+	// Load the YAML content
 	var config Config
-	decoder := json.NewDecoder(file)
+	decoder := yaml.NewDecoder(file)
 	err = decoder.Decode(&config)
 	if err != nil {
 		log.Fatalf("Failed to decode config file: %s", err)
 	}
 
+	// Convert the YAML config to JSON for validation using the schema
+	jsonData, err := json.Marshal(config)
+	if err != nil {
+		log.Fatalf("Failed to convert YAML to JSON: %s", err)
+	}
+
 	// Load the schema and document
 	schemaLoader := gojsonschema.NewBytesLoader(configSchema)
-	documentLoader := gojsonschema.NewGoLoader(config)
+	documentLoader := gojsonschema.NewBytesLoader(jsonData) // use the converted JSON here
 
 	result, err := gojsonschema.Validate(schemaLoader, documentLoader)
 	if err != nil {

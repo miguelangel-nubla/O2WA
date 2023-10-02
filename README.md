@@ -58,7 +58,7 @@ Ensure your `$GOPATH/bin` directory is in your `$PATH` to run the installed bina
 
 ### Step 2: Set Up Configuration
 
-In the directory where `o2wa` is installed or your working directory, you'll find a sample `config.json` configuration file. Tailor this file to your environment:
+In the directory where `o2wa` is installed or your working directory, you'll find a sample `config.example.yaml` configuration file. Tailor this file to your environment:
 
 Ensure you update the OAuth2 endpoint URLs, client credentials, and define any custom commands as needed.
 
@@ -77,7 +77,7 @@ o2wa
 Open a browser and navigate to the `o2wa` web interface:
 
 ```
-http://localhost:8080  # Make sure to adjust the port if you've modified it in config.json
+http://localhost:8080  # Make sure to adjust the port if you've modified it in config.yaml
 ```
 
 Then, follow the on-screen guidance to authenticate and execute your defined commands.
@@ -86,12 +86,12 @@ Then, follow the on-screen guidance to authenticate and execute your defined com
 
 ## Docker Deployment
 
-Sample config.json is provided in the repository. Deploy with:
+Sample config.example.yaml is provided in the repository. Deploy with:
 
 ```bash
 docker run \
     -p 8080:8080 \
-    -v $PWD/config.json:/config.json \
+    -v $PWD/config.yaml:/config.yaml \
     ghcr.io/miguelangel-nubla/o2wa:latest
 ```
 
@@ -105,7 +105,7 @@ In scenarios where `o2wa`'s custom commands require special tools or setups, you
     ```bash
     docker run \
         -p 8080:8080 \
-        -v $PWD/config.json:/config.json \
+        -v $PWD/config.yaml:/config.yaml \
         -v /path/to/your/custom-init.sh:/custom-init.sh \
         -e INIT_SCRIPT_PATH=/custom-init.sh \
         ghcr.io/miguelangel-nubla/o2wa
@@ -122,7 +122,7 @@ For Docker deployments, mount your CA certificates at `/trusted-ca-certs`:
 ```bash
 docker run \
     -p 8080:8080 \
-    -v $PWD/config.json:/config.json \
+    -v $PWD/config.yaml:/config.yaml \
     -v /path/to/your/ca/certs:/trusted-ca-certs \
     ghcr.io/miguelangel-nubla/o2wa
 ```

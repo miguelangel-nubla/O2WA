@@ -111,7 +111,7 @@ archives:
       - LICENSE*
       - README*
       - CHANGELOG*
-      - config.json
+      - config.example.yaml
     format: tar.gz
     name_template: >-
       {{ .ProjectName }}_
