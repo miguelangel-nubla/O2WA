@@ -62,6 +62,7 @@ func main() {
 	}
 
 	http.HandleFunc("/values", app.AuthMiddleware([]string{}, app.EndpointValues))
+	http.HandleFunc("/logout", app.EndpointLogout)
 	http.HandleFunc(u.Path, app.Oauth2Callback)
 
 	server := &http.Server{
