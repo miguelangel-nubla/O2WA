@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["clientID", "clientSecret", "oidcIssuer", "callbackURL", "endpoints"],
+  "properties": {
+    "clientID": { "type": "string" },
+    "clientSecret": { "type": "string" },
+    "oidcIssuer": { "type": "string" },
+    "callbackURL": { "type": "string" },
+    "listenAddr": {
+      "type": "string",
+      "default": ":8080"
+    },
+    "tlsCert": {
+      "type": "string"
+    },
+    "tlsKey": {
+      "type": "string"
+    },
+    "endpoints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "command", "htmlFile"],
+        "properties": {
+          "path": { "type": "string" },
+          "protected": { "type": "boolean" },
+          "requiredGroups": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "command": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "binaryOutput": { "type": "boolean" },
+          "htmlFile": { "type": "string" }
+        }
+      }
+    }
+  }
+}

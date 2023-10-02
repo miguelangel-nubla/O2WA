@@ -1,0 +1,138 @@
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - 386
+      - arm64
+      - arm
+    goarm:
+      - 7
+dockers:
+  -
+    image_templates:
+    - "ghcr.io/miguelangel-nubla/{{.ProjectName}}:{{ .Tag }}-amd64"
+    dockerfile: 'Dockerfile.goreleaser'
+    extra_files:
+    - entrypoint.sh
+    use: buildx
+    build_flag_templates:
+    - "--pull"
+    - "--platform=linux/amd64"
+    - "--label=org.opencontainers.image.created={{.Date}}"
+    - "--label=org.opencontainers.image.title={{.ProjectName}}"
+    - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+    - "--label=org.opencontainers.image.version={{.Version}}"
+    - "--label=org.opencontainers.image.url=https://github.com/miguelangel-nubla/{{ .ProjectName }}"
+    - "--label=org.opencontainers.image.source=https://github.com/miguelangel-nubla/{{ .ProjectName }}"
+  -
+    image_templates:
+    - "ghcr.io/miguelangel-nubla/{{.ProjectName}}:{{ .Tag }}-armv7"
+    dockerfile: 'Dockerfile.goreleaser'
+    extra_files:
+    - entrypoint.sh
+    use: buildx
+    build_flag_templates:
+    - "--pull"
+    - "--platform=linux/arm/v7"
+    - "--label=org.opencontainers.image.created={{.Date}}"
+    - "--label=org.opencontainers.image.title={{.ProjectName}}"
+    - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+    - "--label=org.opencontainers.image.version={{.Version}}"
+    - "--label=org.opencontainers.image.url=https://github.com/miguelangel-nubla/{{ .ProjectName }}"
+    - "--label=org.opencontainers.image.source=https://github.com/miguelangel-nubla/{{ .ProjectName }}"
+  -
+    image_templates:
+    - "ghcr.io/miguelangel-nubla/{{.ProjectName}}:{{ .Tag }}-arm64"
+    dockerfile: 'Dockerfile.goreleaser'
+    extra_files:
+    - entrypoint.sh
+    use: buildx
+    build_flag_templates:
+    - "--pull"
+    - "--platform=linux/arm64"
+    - "--label=org.opencontainers.image.created={{.Date}}"
+    - "--label=org.opencontainers.image.title={{.ProjectName}}"
+    - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+    - "--label=org.opencontainers.image.version={{.Version}}"
+    - "--label=org.opencontainers.image.url=https://github.com/miguelangel-nubla/{{ .ProjectName }}"
+    - "--label=org.opencontainers.image.source=https://github.com/miguelangel-nubla/{{ .ProjectName }}"
+docker_manifests:
+  - 
+    name_template: ghcr.io/miguelangel-nubla/{{ .ProjectName }}:latest
+    image_templates:
+    - ghcr.io/miguelangel-nubla/{{ .ProjectName }}:{{ .Tag }}-amd64
+    - ghcr.io/miguelangel-nubla/{{ .ProjectName }}:{{ .Tag }}-armv7
+    - ghcr.io/miguelangel-nubla/{{ .ProjectName }}:{{ .Tag }}-arm64
+  - 
+    name_template: ghcr.io/miguelangel-nubla/{{ .ProjectName }}:{{ .Tag }}
+    image_templates:
+    - ghcr.io/miguelangel-nubla/{{ .ProjectName }}:{{ .Tag }}-amd64
+    - ghcr.io/miguelangel-nubla/{{ .ProjectName }}:{{ .Tag }}-armv7
+    - ghcr.io/miguelangel-nubla/{{ .ProjectName }}:{{ .Tag }}-arm64
+  - 
+    name_template: ghcr.io/miguelangel-nubla/{{.ProjectName}}:v{{ .Major }}
+    image_templates:
+    - ghcr.io/miguelangel-nubla/{{ .ProjectName }}:{{ .Tag }}-amd64
+    - ghcr.io/miguelangel-nubla/{{ .ProjectName }}:{{ .Tag }}-armv7
+    - ghcr.io/miguelangel-nubla/{{ .ProjectName }}:{{ .Tag }}-arm64
+  - 
+    name_template: ghcr.io/miguelangel-nubla/{{.ProjectName}}:v{{ .Major }}.{{ .Minor }}
+    image_templates:
+    - ghcr.io/miguelangel-nubla/{{ .ProjectName }}:{{ .Tag }}-amd64
+    - ghcr.io/miguelangel-nubla/{{ .ProjectName }}:{{ .Tag }}-armv7
+    - ghcr.io/miguelangel-nubla/{{ .ProjectName }}:{{ .Tag }}-arm64
+
+# kos:
+#   - repository: ghcr.io/miguelangel-nubla/{{.ProjectName}}
+#     tags:
+#       - latest
+#       - "{{ .Tag }}"
+#       - "v{{ .Major }}"
+#       - "v{{ .Major }}.{{ .Minor }}"
+#     base_image: ubuntu
+#     bare: true
+#     preserve_import_paths: false
+#     platforms:
+#     - linux/amd64
+#     - linux/arm64
+#     - linux/arm/v7
+archives:
+  - 
+    files:
+      - LICENSE*
+      - README*
+      - CHANGELOG*
+      - config.json
+    format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+    - goos: windows
+      format: zip
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj

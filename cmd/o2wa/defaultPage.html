@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Command Execution</title>
+    <style>
+        :root {
+            color: white;
+            --background-color: #f8f9fa;
+            --button-color: #007bff;
+            --button-color-hover: #0056b3;
+            --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --font-stack-monospace: 'Source Code Pro', 'Consolas', 'Menlo', 'Monaco', 'Courier New', Courier, monospace;
+        }
+
+        body {
+            font-family: var(--font-stack);
+            background-color: var(--background-color);
+            padding: 20px;
+            background-color: black;
+        }
+
+        #loading {
+            display: none;
+            margin-top: 10px;
+        }
+
+        .stdout {
+            color: white;
+        }
+
+        .stderr {
+            color: red;
+        }
+
+        .stdout, .stderr {
+            font-family: var(--font-stack-monospace);
+            white-space: pre;
+        }
+
+        /* Modal styles */
+        .modal-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .modal {
+            color: black;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            width: 300px;
+            text-align: center;
+        }
+
+        .modal button {
+            padding: 5px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loading">Loading...</div>
+    <div id="output"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const loading = document.getElementById('loading');
+            const outputDiv = document.getElementById('output');
+
+            const fetchAndHandleResponse = async () => {
+                try {
+                    const response = await fetch(window.location.pathname, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': '{{.CSRFToken}}' // TODO: Set this from a cookie or another mechanism
+                        }
+                    });
+
+                    const contentType = response.headers.get('Content-Type');
+
+                    if (contentType.includes('application/x-ndjson')) {
+                        await handleNDJSONStream(response);
+                    } else if (contentType.includes('application/octet-stream')) {
+                        await downloadBinaryFile(response);
+                    } else {
+                        await showResponseAsIs(response);
+                    }
+                } catch (error) {
+                    console.error("Error:", error);
+                } finally {
+                    loading.style.display = 'none';
+                }
+            };
+
+            // Handle NDJSON stream
+            const handleNDJSONStream = async (response) => {
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let buffer = '';
+
+                return new Promise((resolve, reject) => {
+                    const processChunk = async ({ done, value }) => {
+                        if (done) {
+                            if (buffer.trim() !== '') {
+                                try {
+                                    const json = JSON.parse(buffer.trim());
+                                    handleJsonObject(json);
+                                } catch (e) {
+                                    reject(new Error("Invalid NDJSON format"));
+                                }
+                            }
+                            return resolve();
+                        }
+
+                        buffer += decoder.decode(value);
+                        const lines = buffer.split('\n');
+
+                        for (let i = 0; i < lines.length - 1; i++) {
+                            const line = lines[i].trim();
+                            if (line) {
+                                try {
+                                    const json = JSON.parse(line);
+                                    handleJsonObject(json);
+                                } catch (e) {
+                                    reject(new Error("Invalid NDJSON format"));
+                                }
+                            }
+                        }
+                        buffer = lines[lines.length - 1];
+                        reader.read().then(processChunk, reject);
+                    };
+
+                    reader.read().then(processChunk, reject);
+                });
+            };
+
+            function showCharacterCodes(str) {
+                for (let i = 0; i < str.length; i++) {
+                    console.log(`${str[i]}: ${str.charCodeAt(i)}`);
+                }
+            }
+
+            // Handle individual JSON object
+            const handleJsonObject = (json) => {
+                console.log(json);
+                const lineDiv = document.createElement('div');
+                lineDiv.className = json.source;
+                lineDiv.textContent = json.text;
+                outputDiv.appendChild(lineDiv);
+
+                showCharacterCodes(json.text);
+            };
+
+            // Download binary file
+            const downloadBinaryFile = async (response) => {
+                const blob = await response.blob();
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'downloaded_file';
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            };
+
+            // Show response as plain text
+            const showResponseAsIs = async (response) => {
+                const text = await response.text();
+                const lineDiv = document.createElement('div');
+                lineDiv.textContent = text;
+                outputDiv.appendChild(lineDiv);
+            };
+
+            // Function that mimics the `confirm` but asynchronously
+            function asyncConfirm(message) {
+                return new Promise((resolve) => {
+                    const modal = document.createElement('div');
+                    modal.innerHTML = `
+                        <div class="modal-bg">
+                            <div class="modal">
+                                <p>${message}</p>
+                                <button id="confirmYes">Yes</button>
+                                <button id="confirmNo">No</button>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+                    
+                    modal.querySelector('#confirmYes').onclick = () => {
+                        modal.remove();
+                        resolve(true);
+                    };
+
+                    modal.querySelector('#confirmNo').onclick = () => {
+                        modal.remove();
+                        resolve(false);
+                    };
+                });
+            }
+
+            (async function() {
+                try {
+                    const confirmed = await asyncConfirm("Are you sure you want to run " + window.location.pathname + window.location.search + "?");
+                    if (!confirmed) throw new Error('User declined.');
+
+                    loading.style.display = 'block';
+                    await fetchAndHandleResponse();
+                } catch (error) {
+                    console.error("Error:", error);
+                } finally {
+                    loading.style.display = 'none';
+                }
+            })();
+        });
+    </script>
+</body>
+
+</html>

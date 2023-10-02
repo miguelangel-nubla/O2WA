@@ -1,0 +1,11 @@
+FROM ubuntu:latest
+
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+
+COPY o2wa /bin/o2wa
+COPY entrypoint.sh /entrypoint.sh
+
+ENV TRUSTED_CA_PATH=/trusted-ca-certs
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["/bin/o2wa"]
