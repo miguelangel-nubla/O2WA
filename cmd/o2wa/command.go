@@ -50,12 +50,20 @@ func (app *Server) HandleCommandConfirm(w http.ResponseWriter, r *http.Request, 
 
 	if _, err := os.Stat(e.HTMLFile); err == nil {
 		tmpl, err = template.ParseFiles(e.HTMLFile)
+		if err != nil {
+			http.Error(w, "Failed to parse HTML file: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 	} else {
 		if e.HTMLFile != "" {
 			http.Error(w, "Failed to load HTML file: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 		tmpl, err = template.New("defaultPage").Parse(defaultPage)
+		if err != nil {
+			http.Error(w, "Failed to parse default HTML file: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	if err != nil {
@@ -112,6 +120,10 @@ func (app *Server) executeCommand(w http.ResponseWriter, r *http.Request, e Endp
 			defer wg.Done()
 			io.Copy(w, stdout) // Only streaming stdout for binary data
 		}()
+
+		wg.Wait() // Wait for all goroutines to finish
+
+		return cmd.Wait()
 	} else {
 		w.Header().Set("Content-Type", "application/x-ndjson; charset=utf-8")
 		wg.Add(2)
@@ -151,13 +163,24 @@ func (app *Server) executeCommand(w http.ResponseWriter, r *http.Request, e Endp
 				writeMutex.Unlock()
 			}
 		}()
+
+		wg.Wait() // Wait for all goroutines to finish
+
+		if err := cmd.Wait(); err != nil {
+			line := outputLine{
+				Timestamp: time.Now(),
+				Source:    "stderr",
+				Text:      err.Error(),
+			}
+			jsonLine, _ := json.Marshal(line)
+
+			writeMutex.Lock()
+			w.Write(jsonLine)
+			w.Write([]byte("\n"))
+			writeMutex.Unlock()
+		}
 	}
 
-	wg.Wait() // Wait for all goroutines to finish
-
-	if err := cmd.Wait(); err != nil {
-		return err
-	}
 	return nil
 }
 
