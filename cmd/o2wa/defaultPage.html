@@ -153,12 +153,6 @@
                 });
             };
 
-            function showCharacterCodes(str) {
-                for (let i = 0; i < str.length; i++) {
-                    console.log(`${str[i]}: ${str.charCodeAt(i)}`);
-                }
-            }
-
             // Handle individual JSON object
             const handleJsonObject = (json) => {
                 console.log(json);
@@ -166,8 +160,6 @@
                 lineDiv.className = json.source;
                 lineDiv.textContent = json.text;
                 outputDiv.appendChild(lineDiv);
-
-                showCharacterCodes(json.text);
             };
 
             // Download binary file
